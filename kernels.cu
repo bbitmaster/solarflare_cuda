@@ -18,6 +18,12 @@ int init_cuda(){
 	cudaMalloc((void **)&firebuff[1], 600 * 800 *
 	                  sizeof(float));
 
+	cudaMemset(firebuff[0],0, 600 * 800 *
+	                  sizeof(float));
+
+	cudaMemset(firebuff[1],0, 600 * 800 *
+	                  sizeof(float));
+
 	cudaMalloc((void **)&devStates, 600 * 800 *
 	                  sizeof(curandState));
 	setup_kernel<<<600,800>>>(devStates);
@@ -54,27 +60,37 @@ __global__ void do_fire(unsigned int *pData,curandState *state,float *firesrc,fl
 	curandState localState = state[idx];
 	//pData[idx] = ((blockIdx.x&0xff) << 8) + threadIdx.x;
 
-	int rand = curand_uniform(&localState)*256;
-	rand &= 0xFF;
+	int rand = curand_uniform(&localState)*32768;
 	state[idx] = localState;
 
 	if(thread_y >= 600-1)
-		firedest[idx] = rand;
+		firedest[idx] = rand&0xFF;
 	__syncthreads();
 
 
 	if(thread_y < 600-1){
 		float avg[4];
-		if((thread_x-1) >= 0)avg[1] = firesrc[(thread_y+1)*maxwidth + thread_x-1];
+		if((thread_x-1) >= 0)avg[1] = firesrc[(thread_y)*maxwidth + (thread_x-1)];
 		avg[2] = firesrc[(thread_y+1)*maxwidth + thread_x];
-		if((thread_x+1) < 800)avg[3] = firesrc[(thread_y+1)*maxwidth + thread_x+1];
+		if((thread_x+1) < 800)avg[3] = firesrc[(thread_y)*maxwidth + (thread_x+1)];
 
 		avg[0] = (avg[1] + avg[2] + avg[3])/3;
+		int rndcap = (avg[0]*6/159);
+		rndcap += 1;
 
+		if(avg[0] > 5.0)
+			avg[0] += rand%rndcap;
+		avg[0] -= 2.07421875;
+
+		//avg[0] += rand%5;
+
+		if(avg[0] > 255)avg[0] = 255;
+		else if(avg[0] > 250)avg[0] = 0;
+
+		//if(avg[0] < 0)avg[0] = 0;
 		firedest[thread_y*maxwidth + thread_x] = avg[0];
 	}
-
-	pData[idx] = (((int)firedest[idx])&0xFF) << 16;
+	pData[idx] = ((int)firedest[idx]) << 16;
 
 	return;
 }
