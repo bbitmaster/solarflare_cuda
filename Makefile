@@ -1,3 +1,14 @@
+#note: I am using fedora 17 with CUDA 5.0 installed. This makefile
+#contains some things specific to *my* setup on this system.
+#Namely, I had to install GCC 4.6.3 from source since CUDA does not
+#work with GCC 4.7 and fedora now uses GCC 4.7 
+#I add /home/ben/cudapath/ to my path which contains softlinks to
+#gcc 4.6.3 so that CUDA sees that version.
+#
+#Another thing that may be different on another system, is cuda could be
+#installed elsewhere. On my system I have it at /usr/local/cuda-5.0
+#
+#please edit appropriately
 NVCC=nvcc
 
 #CXX=clang++
