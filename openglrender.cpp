@@ -138,7 +138,7 @@ int Application::gameLoop(){
 		render();
 		//cout << "test..." << endl;
 		//TODO: fix
-		SDL_Delay(16);
+		//SDL_Delay(16);
 	}
 
 	return 0;
